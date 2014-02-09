@@ -33,8 +33,18 @@ class Nodo:
 		self._status = status
 	def add_sipnapsis(self, new_node): # metodo para agregar un nuevo nodo
 		self._sipnapsis[new_node._nombre] = new_node 
-	def.set_jugador_humano(self, value): # metodo set de jugador_humano
+	def set_jugador_humano(self, value): # metodo set de jugador_humano
 		self._jugador_humano = value
+
+## Clase cerebro ##
+class Cerebro:	
+	def __init__(self):
+		self._neurona_actual = None
+		self._neuronas = {}
+	def add_neurona(self, nodo):
+		self._neuronas[nodo._nombre] = nodo
+	def buscar_neurona(self):
+		print 'hi'
 
 ## Clase Gato ##
 class Gato:
@@ -46,7 +56,7 @@ class Gato:
 		self._width  = 600
 		self._bloque_largo = self._height / 3 ## Ancho ##
 		self._bloque_ancho = self._width / 3 ## largo ##
-		self._size = self._height, self._width + 50
+		self._size = self._height, self._width
 		## Colores ##
 		self._blanco = pygame.Color(255, 255, 255)
 		self._negro  =   pygame.Color(0, 0, 0)
