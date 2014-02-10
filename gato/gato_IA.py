@@ -5,34 +5,38 @@ from random import choice
 ## Clase Coordenada ##
 class Coordenada:
 	## Inicializador ##
-	def __init__(self):
-		self._x = 0 # Creacion variable x
-		self._y = 0	# Creacion variable y
+	def __init__(self, x = 0, y = 0):
+		self._x = x # Creacion variable x
+		self._y = y	# Creacion variable y
 	def set_x(self, x): # metodo set de x
 		self._x = x
 	def set_y(self, y): # metodo set de y
 		self.y = y
 	def set(self, x, y):# metodo para establecer x, y
 		self.set_x(x)
-		self.set_y(y)		
+		self.set_y(y)	
+	def __str__(self):
+		return str(self._x) + "," + str(self._y)
 
 ## Clase Nodo ##
-class Nodo:
+class Neurona:
+	def __str__(self):
+		return self._nombre
 	## Inicializador ##
-	def __init__(self):
-		self._coordenada = Coordenada() # Creacion de una variable de tipo Coordenada (coordenada del movimiento)
-		self._nombre = '' # Creacion variable nombre (nombre del grafo)
-		self._status = '' # Ceacion variable status (para saber si con el ultimo mov se perdio o gano o empato)
-		self._sipnapsis = {} # Creacion de la variable sipnapsis (para establecer las conexiones entre los nodos)
-		self._jugador_humano = True # Creacion de la variable jugador_humano (para saber quien hizo el movimiento)
+	def __init__(self, nombre, status, sipnapsis, jugador_humano, coordenada):
+		self._coordenada = coordenada # Creacion de una variable de tipo Coordenada (coordenada del movimiento)
+		self._nombre = nombre # Creacion variable nombre (nombre del grafo)
+		self._status = status # Ceacion variable status (para saber si con el ultimo mov se perdio o gano o empato)
+		self._sipnapsis = sipnapsis # Creacion de la variable sipnapsis (para establecer las conexiones entre los nodos)		
+		self._jugador_humano = jugador_humano # Creacion de la variable jugador_humano (para saber quien hizo el movimiento)
 	def set_coordenada(self, coordenada): # metodo set de coordenada
 		self._coordenada = coordenada
 	def set_nombre(self, nombre): # metodo set de nombre
 		self._nombre = nombre
 	def set_status(self, status): # metodo set de status
 		self._status = status
-	def add_sipnapsis(self, new_node): # metodo para agregar un nuevo nodo
-		self._sipnapsis[new_node._nombre] = new_node 
+	def add_sipnapsis(self, new_neurona): # metodo para agregar un nuevo nodo
+		self._sipnapsis[new_neurona._nombre] = new_node 
 	def set_jugador_humano(self, value): # metodo set de jugador_humano
 		self._jugador_humano = value
 
@@ -40,17 +44,55 @@ class Nodo:
 class Cerebro:	
 	def __init__(self):
 		self._neurona_actual = None
+		self._neurona_anterior = None
 		self._neuronas = {}
-	def add_neurona(self, nodo):
-		self._neuronas[nodo._nombre] = nodo
-	def buscar_neurona(self):
-		print 'hi'
+	def add_neurona(self, neurona):
+		print "Agregar neurona = " + str(neurona) ## Debug
+		if self._neurona_actual == None and not self._neuronas.has_key(neurona._nombre): ## 1er movimiento sin memoria
+			self._neuronas[neurona._nombre] = self._neurona_actual = neurona
+		elif self._neurona_actual == None and self._neuronas.has_key(neurona._nombre): ## 1er movimiento con memoria
+			self._neurona_actual = self._neuronas[neurona._nombre]
+		elif not self._neurona_actual == None:
+			if self._neurona_actual._sipnapsis.has_key(neurona._nombre):
+				self._neurona_anterior = self._neurona_actual
+				self._neurona_actual = self._neurona_actual._sipnapsis[neurona._nombre]
+			else:
+				self._neurona_anterior = self._neurona_actual
+				self._neurona_actual._sipnapsis[neurona._nombre] = neurona
+				self._neurona_actual = neurona
+		else:
+			print "Error in logic"
+
+	def analizar_mov(self, matriz):
+		print "Analizar Neurona = " + str(self._neurona_actual) ## debug
+		print "Coord = " + str(self._neurona_actual._coordenada)
+		print "Cantidad de sipnapsis(neurona actual) = " + str(len(self._neurona_actual._sipnapsis.keys())) ## debug
+		for neu in self._neurona_actual._sipnapsis.keys():
+			print "--> Neurona Actual sipnapsis = " + str(neu)
+
+		if len(self._neurona_actual._sipnapsis.keys()) == 0:
+			movs = []
+			for i in range(3):
+				for j in range(3):
+					if matriz[i][j] == 0:
+						movs.append([i, j]) # anexa movimientos validos
+			if len(movs) > 0: # si hay movimientos disponibles							
+				x, y = choice(movs) # regresa x, y				
+ 				return Neurona(str(x) + ":" + str(y), '', { }, False, Coordenada(x, y))				
+			else:
+				return False
+		else:
+			return False
+
+
 
 ## Clase Gato ##
 class Gato:
-	def __init__(self):
+	def __init__(self, cerebro):
 		## Inicializacion de las librerias ##
 		pygame.init()
+		## cerebro ##
+		self._cerebro = cerebro
 		## Tamanioo de la ventana
 		self._height = 600
 		self._width  = 600
@@ -97,23 +139,23 @@ class Gato:
 					#x = 0
 					#y = 0				
 					###########################
-					if columna == 0:
+					if fila == 0:
 						y = 0
 						y_fin = self._bloque_largo - 1
-					elif columna == 1:
+					elif fila == 1:
 						y = self._bloque_largo
 						y_fin = self._bloque_largo * 2 - 1
-					elif columna == 2:
+					elif fila == 2:
 						y = self._bloque_largo * 2
 						y_fin = self._width
 					###########################
-					if fila == 0:
+					if columna == 0:
 						x = 0
 						x_fin = self._bloque_ancho - 1
-					elif fila == 1:
+					elif columna == 1:
 						x = self._bloque_ancho
 						x_fin = self._bloque_ancho * 2 - 1
-					elif fila == 2:
+					elif columna == 2:
 						x = self._bloque_ancho * 2
 						x_fin = self._height
 					###########################
@@ -130,16 +172,13 @@ class Gato:
 					self._ventana.blit(imagen, (x, y))
 
 	def movimiento_CPU(self):
-		movs = []
-		for i in range(3):
-			for j in range(3):
-				if self._matriz[i][j] == 0:
-					movs.append([i, j])				
-		if len(movs) > 0:
-			x, y = choice(movs)
-			self._matriz[x][y] = 1
+		neurona = self._cerebro.analizar_mov(self._matriz)
+		if not neurona == False:			
+			self._matriz[neurona._coordenada._x][neurona._coordenada._y] = 1
+			self._cerebro.add_neurona(neurona)
 			if(self.check_move(1, self._matriz)):
 				print "Perdiste"
+				self._matriz = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]	
 			self._turno_humano = True
 		else:
 			self._matriz = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]			
@@ -190,24 +229,23 @@ class Gato:
 				sys.exit()	  ## Cerrar aplicacion 	
 			elif event.type == MOUSEBUTTONUP: ## Presion de un boton del mouse ##
 				if event.button in (1, 3) and self._turno_humano == True: ## Presion del boton izquierdo o derecho del mouse ##
-					mouse_x, mouse_y = event.pos ## Coordenadas del mouse ##
-					vector_x = -1
-					vector_y = -1
+					mouse_x, mouse_y = event.pos ## Coordenadas del mouse ##					
 					## Coordennadas en X ##
-					if mouse_x in range(0, self._bloque_largo):
+					if mouse_y in range(0, self._bloque_largo):
 						vector_x = 0
-					elif mouse_x in range(self._bloque_largo, self._bloque_largo * 2):
+					elif mouse_y in range(self._bloque_largo, self._bloque_largo * 2):
 						vector_x = 1
-					elif mouse_x in range(self._bloque_largo * 2, self._height + 1):
+					elif mouse_y in range(self._bloque_largo * 2, self._width + 1):
 						vector_x = 2
 					## Coordenadas en Y ##
-					if mouse_y in range(0, self._bloque_ancho):
+					if mouse_x in range(0, self._bloque_ancho):
 						vector_y = 0
-					elif mouse_y in range(self._bloque_ancho, self._bloque_ancho * 2):
+					elif mouse_x in range(self._bloque_ancho, self._bloque_ancho * 2):
 						vector_y = 1
-					elif mouse_y in range(self._bloque_ancho * 2, self._width + 1):
+					elif mouse_x in range(self._bloque_ancho * 2, self._height + 1):
 						vector_y = 2
 					if  self._matriz[vector_x][vector_y] == 0:
+						self._cerebro.add_neurona(Neurona(str(vector_x)+":"+str(vector_y), '', {}, self._turno_humano, Coordenada(vector_x, vector_y)))
 						self._matriz[vector_x][vector_y] = 2 ## se crea el movimiento
 						if(self.check_move(2, self._matriz)):
 							self._matriz = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]			
@@ -216,6 +254,7 @@ class Gato:
 						else:
 							self._turno_humano = False
 						#print matriz ## Depuracion
+						#print self._cerebro._neurona_actual ## Depuracion
 
 			elif event.type == KEYDOWN: ## Envento de tecla presionada ##
 				if event.key == K_ESCAPE: ## Tecla ESC presionada ##
@@ -231,8 +270,8 @@ class Gato:
 			##### Actualizacion del panel ######
 			pygame.display.update() ## Actualiza la ventana ##
 			self._fps.tick(30) ## Espera, para que corra a 30 fps ##
-
-mi_gato = Gato() # se crea el gato
+cerebro = Cerebro()
+mi_gato = Gato(cerebro) # se crea el gato
 mi_gato.play() # se inicializa el gato
 
 	
